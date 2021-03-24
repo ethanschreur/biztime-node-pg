@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const ExpressError = require('../expressError');
+const dateTime = require('node-datetime');
 
 const router = new express.Router();
 
@@ -21,7 +22,6 @@ router.get('/:id', async (req, res, next) => {
 		const company_data = await db.query(`SELECT code, name, description FROM companies WHERE code = $1`, [
 			result.rows[0].comp_code
 		]);
-		console.log(company_data.rows);
 		const { code, name, description } = company_data.rows[0];
 		response['company'] = { code, name, description };
 		delete response.comp_code;
@@ -38,7 +38,6 @@ router.post('/', async (req, res, next) => {
 			'INSERT INTO invoices (comp_code, amt) VALUES ($1, $2) RETURNING id, comp_code, amt, paid, add_date, paid_date',
 			[ comp_code, amt ]
 		);
-		console.log(result.rows);
 		return res.status(200).json({ invoice: result.rows[0] });
 	} catch (e) {
 		return next(new ExpressError('Invoice could not be added.'), 404);
@@ -47,15 +46,16 @@ router.post('/', async (req, res, next) => {
 
 router.put('/:id', async (req, res, next) => {
 	try {
-		const { amt } = req.body;
+		const { amt, paid } = req.body;
+		const paid_date = paid === true ? dateTime.create()._now : null;
 		const id = req.params.id;
 		const result = await db.query(
-			'UPDATE invoices SET amt = $1 RETURNING id, comp_code, amt, paid, add_date, paid_date',
-			[ id ]
+			'UPDATE invoices SET amt = $1, paid_date= CASE WHEN paid_date IS NULL THEN $2 ELSE paid_date END WHERE id = $3 RETURNING id, comp_code, amt, paid, add_date, paid_date',
+			[ amt, paid_date, id ]
 		);
 		return res.status(200).json({ invoice: result.rows[0] });
 	} catch (e) {
-		return next(new ExpressError('Company cannot be edited', 404));
+		return next(new ExpressError(e, 404));
 	}
 });
 

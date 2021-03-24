@@ -10,6 +10,12 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
-    "pg": "^8.5.1"
+    "jest": "^26.6.3",
+    "node-datetime": "^2.1.2",
+    "pg": "^8.5.1",
+    "slugify": "^1.5.0"
+  },
+  "devDependencies": {
+    "supertest": "^6.1.3"
   }
 }
